@@ -1,75 +1,41 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import mqtt from 'mqtt';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import ParkingStatus from './components/ParkingStatus';
+import ParkingControl from './components/ParkingControl';
 
-const App = () => {
-  const [availableSpaces, setAvailableSpaces] = useState(0);
-  const [client, setClient] = useState(null);
-
-  useEffect(() => {
-    const mqttClient = mqtt.connect('ws://your_MQTT_BROKER_IP:1883');
-
-    mqttClient.on('connect', () => {
-      console.log('Connected to MQTT broker');
-      mqttClient.subscribe('parking/spaces', (err) => {
-        if (!err) {
-          console.log('Subscribed to parking/spaces');
-        }
-      });
-    });
-
-    mqttClient.on('message', (topic, message) => {
-      if (topic === 'parking/spaces') {
-        const data = JSON.parse(message.toString());
-        setAvailableSpaces(data.spaces);
-      }
-    });
-
-    mqttClient.on('error', (err) => {
-      console.error('Connection error:', err);
-      mqttClient.end();
-    });
-
-    mqttClient.on('close', () => {
-      console.log('Disconnected');
-    });
-
-    setClient(mqttClient);
-
-    return () => {
-      if (client) {
-        client.end();
-      }
-    };
-  }, []);
-
-  const handleBarrier = (action) => {
-    if (client) {
-      client.publish('parking/barrier', action);
-    }
-  };
-
+export default function App() {
   return (
     <View style={styles.container}>
-      <Text style={styles.spacesText}>Places disponible : {availableSpaces}</Text>
-      <Button title="Open Barrier" onPress={() => handleBarrier('open')} />
-      <br></br>
-      <Button title="Close Barrier" onPress={() => handleBarrier('close')} />
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Parking IoT</Text>
+      </View>
+      <View style={styles.main}>
+        <ParkingStatus />
+        <ParkingControl />
+      </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#f0f0f0',
+  },
+  header: {
+    backgroundColor: '#0BC282',
+    paddingTop: 60,
+    paddingBottom: 10,
     alignItems: 'center',
   },
-  spacesText: {
-    fontSize: 24,
-    marginBottom: 20,
-  }
+  headerText: {
+    color: 'white',
+    fontSize: 40,
+  },
+  main: {
+    padding: 20,
+    flex: 1,
+    justifyContent: 'center',
+  },
 });
 
-export default App;
