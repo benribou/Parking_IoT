@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import ParkingStatus from './components/ParkingStatus';
 import ParkingControl from './components/ParkingControl';
 
@@ -11,7 +11,7 @@ export default function App() {
       </View>
       <View style={styles.main}>
         <ParkingStatus />
-        <ParkingControl />
+        {/* <ParkingControl /> */}
       </View>
     </View>
   );
@@ -35,7 +35,6 @@ const styles = StyleSheet.create({
   main: {
     padding: 20,
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
 });
-

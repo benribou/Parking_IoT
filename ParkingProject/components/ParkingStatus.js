@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, Button, TextInput } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Client, Message } from 'react-native-paho-mqtt';
 
@@ -8,6 +8,7 @@ const ParkingStatus = () => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const reconnectTimeout = useRef(null);
+  const [availableSpaces, setAvailableSpaces] = useState(10);
 
   useEffect(() => {
     const createClient = () => {
@@ -32,7 +33,7 @@ const ParkingStatus = () => {
       mqttClient.connect()
         .then(() => {
           console.log('Connected to MQTT broker');
-          mqttClient.subscribe('test/topic');
+          mqttClient.subscribe('porteentre/state');
         })
         .catch((err) => {
           console.error('Connection error: ', err);
@@ -72,31 +73,70 @@ const ParkingStatus = () => {
     }, 5000); // Try to reconnect every 5 seconds
   };
 
-  const sendMessage = () => {
-    if (client && inputMessage) {
-      const message = new Message(inputMessage);
-      message.destinationName = 'test/topic';
+  const sendBarrierMessage = (action, barrier) => {
+    if (client) {
+      const message = new Message(action);
+      const topic = barrier === 'entree' ? 'parking/barriere/entree' : 'parking/barriere/sortie';
+      message.destinationName = topic;
       client.send(message);
-      setInputMessage(''); // Clear the input after sending
-      console.log('Message sent:', inputMessage);
+      console.log(`Barrier ${action} for ${barrier} sent to ${topic}`);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Messages reçus du serveur MQTT</Text>
-      <ScrollView style={styles.scrollView}>
-        {messages.map((msg, index) => (
-          <Text key={index} style={styles.message}>{msg}</Text>
-        ))}
-      </ScrollView>
-      <TextInput
-        style={styles.input}
-        placeholder="Type your message here"
-        value={inputMessage}
-        onChangeText={setInputMessage}
-      />
-      <Button title="Send Message" onPress={sendMessage} />
+      <View style={styles.card}>
+        <View style={styles.statusContainer}>
+          <Text style={styles.spacesText}>Places disponibles</Text>
+          <Text style={styles.spacesText2}>{availableSpaces}</Text>
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <View style={styles.controlsContainer}>
+          <Text style={styles.title}>Contrôle des Barrières</Text>
+          <View style={styles.barrierContainerRow}>
+            <View style={styles.barrierContainer}>
+              <Text style={styles.barrierTitle}>Barrière Entrée</Text>
+              <TouchableOpacity style={[styles.button, styles.openButton]} onPress={() => sendBarrierMessage('open', 'entree')}>
+                <Text style={styles.buttonText}>Ouvrir</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.button, styles.closeButton]} onPress={() => sendBarrierMessage('close', 'entree')}>
+                <Text style={styles.buttonText}>Fermer</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.barrierContainer}>
+              <Text style={styles.barrierTitle}>Barrière Sortie</Text>
+              <TouchableOpacity style={[styles.button, styles.openButton]} onPress={() => sendBarrierMessage('open', 'sortie')}>
+                <Text style={styles.buttonText}>Ouvrir</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.button, styles.closeButton]} onPress={() => sendBarrierMessage('close', 'sortie')}>
+                <Text style={styles.buttonText}>Fermer</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* <View style={styles.card}>
+        <View style={styles.debugContainer}>
+          <Text style={styles.title}>Messages reçus du serveur MQTT</Text>
+          <ScrollView style={styles.scrollView}>
+            {messages.map((msg, index) => (
+              <Text key={index} style={styles.message}>{msg}</Text>
+            ))}
+          </ScrollView>
+          <TextInput
+            style={styles.input}
+            placeholder="Tapez votre message ici"
+            value={inputMessage}
+            onChangeText={setInputMessage}
+          />
+          <TouchableOpacity style={styles.button} onPress={() => sendTestMessage(inputMessage)}>
+            <Text style={styles.buttonText}>Envoyer Message</Text>
+          </TouchableOpacity>
+        </View>
+      </View> */}
     </View>
   );
 };
@@ -104,15 +144,60 @@ const ParkingStatus = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 10,
+    backgroundColor: '#f0f0f0',
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 10,
     padding: 20,
-    backgroundColor: '#ffffff',
+    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  statusContainer: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  spacesText: {
+    fontSize: 30,
+    fontWeight: 'bold',
+  },
+  spacesText2: {
+    fontSize: 45,
+    color: '#0BC282',
+    fontWeight: 'bold',
+  },
+  controlsContainer: {
+    marginBottom: 20,
   },
   title: {
-    fontSize: 24,
-    marginBottom: 20,
+    fontSize: 20,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  barrierContainerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  barrierContainer: {
+    alignItems: 'center',
+  },
+  barrierTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  debugContainer: {
+    flex: 1,
+    justifyContent: 'flex-start', // Ensure items are at the top
   },
   scrollView: {
     marginTop: 10,
+    maxHeight: 150,
   },
   message: {
     fontSize: 16,
@@ -124,6 +209,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
     paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  button: {
+    width: 150,
+    paddingVertical: 15,
+    borderRadius: 5,
+    marginVertical: 10,
+    alignItems: 'center',
+  },
+  openButton: {
+    backgroundColor: '#0BC282', // Green color
+  },
+  closeButton: {
+    backgroundColor: '#dc3545', // Red color
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
   },
 });
 
