@@ -5,8 +5,6 @@ import { Client, Message } from 'react-native-paho-mqtt';
 
 const ParkingStatus = () => {
   const [client, setClient] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
   const reconnectTimeout = useRef(null);
   const [availableSpaces, setAvailableSpaces] = useState(10);
 
@@ -117,26 +115,6 @@ const ParkingStatus = () => {
           </View>
         </View>
       </View>
-
-      {/* <View style={styles.card}>
-        <View style={styles.debugContainer}>
-          <Text style={styles.title}>Messages reçus du serveur MQTT</Text>
-          <ScrollView style={styles.scrollView}>
-            {messages.map((msg, index) => (
-              <Text key={index} style={styles.message}>{msg}</Text>
-            ))}
-          </ScrollView>
-          <TextInput
-            style={styles.input}
-            placeholder="Tapez votre message ici"
-            value={inputMessage}
-            onChangeText={setInputMessage}
-          />
-          <TouchableOpacity style={styles.button} onPress={() => sendTestMessage(inputMessage)}>
-            <Text style={styles.buttonText}>Envoyer Message</Text>
-          </TouchableOpacity>
-        </View>
-      </View> */}
     </View>
   );
 };
